@@ -1,74 +1,86 @@
 import java.util.*;
 
 /**
- * Book My Stay App - Use Case 7
- * Demonstrates add-on services mapped to reservations
+ * Book My Stay App - Use Case 8
+ * Demonstrates booking history storage and reporting
  *
  * @author Sushrith
- * @version 7.1
+ * @version 8.1
  */
 
-// Service class (Add-On)
-class Service {
-    private String serviceName;
-    private double cost;
+// Reservation (Confirmed Booking)
+class Reservation {
+    private String reservationId;
+    private String guestName;
+    private String roomType;
 
-    public Service(String serviceName, double cost) {
-        this.serviceName = serviceName;
-        this.cost = cost;
+    public Reservation(String reservationId, String guestName, String roomType) {
+        this.reservationId = reservationId;
+        this.guestName = guestName;
+        this.roomType = roomType;
     }
 
-    public String getServiceName() {
-        return serviceName;
+    public String getReservationId() {
+        return reservationId;
     }
 
-    public double getCost() {
-        return cost;
+    public String getGuestName() {
+        return guestName;
+    }
+
+    public String getRoomType() {
+        return roomType;
+    }
+
+    public void display() {
+        System.out.println("ID: " + reservationId +
+                " | Guest: " + guestName +
+                " | Room: " + roomType);
     }
 }
 
-// Add-On Service Manager
-class AddOnServiceManager {
+// Booking History (stores confirmed bookings)
+class BookingHistory {
 
-    // Map: Reservation ID → List of Services
-    private Map<String, List<Service>> serviceMap = new HashMap<>();
+    private List<Reservation> history = new ArrayList<>();
 
-    // Add service to a reservation
-    public void addService(String reservationId, Service service) {
-        serviceMap.putIfAbsent(reservationId, new ArrayList<>());
-        serviceMap.get(reservationId).add(service);
-
-        System.out.println("Added service: " + service.getServiceName() +
-                " to Reservation ID: " + reservationId);
+    // Add confirmed booking
+    public void addReservation(Reservation r) {
+        history.add(r);
     }
 
-    // Display services for a reservation
-    public void displayServices(String reservationId) {
-        List<Service> services = serviceMap.get(reservationId);
-
-        if (services == null || services.isEmpty()) {
-            System.out.println("No services added for Reservation ID: " + reservationId);
-            return;
-        }
-
-        System.out.println("\nServices for Reservation ID: " + reservationId);
-        for (Service s : services) {
-            System.out.println("- " + s.getServiceName() + " (₹" + s.getCost() + ")");
-        }
+    // Retrieve all bookings
+    public List<Reservation> getAllReservations() {
+        return history;
     }
 
-    // Calculate total add-on cost
-    public double calculateTotalCost(String reservationId) {
-        List<Service> services = serviceMap.get(reservationId);
-        double total = 0;
+    // Display history
+    public void displayHistory() {
+        System.out.println("\nBooking History:");
+        for (Reservation r : history) {
+            r.display();
+        }
+    }
+}
 
-        if (services != null) {
-            for (Service s : services) {
-                total += s.getCost();
-            }
+// Reporting Service
+class BookingReportService {
+
+    // Generate simple report
+    public void generateReport(List<Reservation> reservations) {
+
+        System.out.println("\nBooking Report Summary:");
+
+        Map<String, Integer> countByRoom = new HashMap<>();
+
+        for (Reservation r : reservations) {
+            countByRoom.put(r.getRoomType(),
+                    countByRoom.getOrDefault(r.getRoomType(), 0) + 1);
         }
 
-        return total;
+        for (Map.Entry<String, Integer> entry : countByRoom.entrySet()) {
+            System.out.println(entry.getKey() + " bookings: " + entry.getValue());
+        }
     }
 }
 
@@ -78,31 +90,21 @@ public class BookMyStay {
     public static void main(String[] args) {
 
         System.out.println("Welcome to Book My Stay App");
-        System.out.println("Hotel Booking System v7.1\n");
+        System.out.println("Hotel Booking System v8.1\n");
 
-        // Assume reservation IDs from Use Case 6
-        String reservation1 = "SI_1234";
-        String reservation2 = "SU_5678";
+        // Initialize history
+        BookingHistory history = new BookingHistory();
 
-        // Initialize manager
-        AddOnServiceManager manager = new AddOnServiceManager();
+        // Simulate confirmed bookings (from UC6)
+        history.addReservation(new Reservation("SI_1234", "Alice", "Single Room"));
+        history.addReservation(new Reservation("SU_5678", "Bob", "Suite Room"));
+        history.addReservation(new Reservation("SI_4321", "Charlie", "Single Room"));
 
-        // Create services
-        Service breakfast = new Service("Breakfast", 500);
-        Service wifi = new Service("WiFi", 200);
-        Service spa = new Service("Spa", 1500);
+        // Display history
+        history.displayHistory();
 
-        // Add services to reservations
-        manager.addService(reservation1, breakfast);
-        manager.addService(reservation1, wifi);
-
-        manager.addService(reservation2, spa);
-
-        // Display services
-        manager.displayServices(reservation1);
-        System.out.println("Total Add-On Cost: ₹" + manager.calculateTotalCost(reservation1));
-
-        manager.displayServices(reservation2);
-        System.out.println("Total Add-On Cost: ₹" + manager.calculateTotalCost(reservation2));
+        // Generate report
+        BookingReportService reportService = new BookingReportService();
+        reportService.generateReport(history.getAllReservations());
     }
 }
