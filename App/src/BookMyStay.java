@@ -1,89 +1,57 @@
-import java.util.HashMap;
-import java.util.Map;
+import java.util.LinkedList;
+import java.util.Queue;
 
 /**
- * Book My Stay App - Use Case 4
- * Demonstrates read-only room search with availability filtering
+ * Book My Stay App - Use Case 5
+ * Demonstrates booking request handling using FIFO Queue
  *
  * @author Sushrith
- * @version 4.1
+ * @version 5.1
  */
 
-// Abstract Room class
-abstract class Room {
-    protected String type;
-    protected int beds;
-    protected double price;
+// Reservation class (represents a booking request)
+class Reservation {
+    private String guestName;
+    private String roomType;
 
-    public Room(String type, int beds, double price) {
-        this.type = type;
-        this.beds = beds;
-        this.price = price;
+    public Reservation(String guestName, String roomType) {
+        this.guestName = guestName;
+        this.roomType = roomType;
     }
 
-    public String getType() {
-        return type;
+    public String getGuestName() {
+        return guestName;
     }
 
-    public void displayDetails() {
-        System.out.println(type + " | Beds: " + beds + " | Price: ₹" + price);
+    public String getRoomType() {
+        return roomType;
     }
-}
 
-// Concrete room classes
-class SingleRoom extends Room {
-    public SingleRoom() {
-        super("Single Room", 1, 2000);
+    public void display() {
+        System.out.println("Guest: " + guestName + " | Requested: " + roomType);
     }
 }
 
-class DoubleRoom extends Room {
-    public DoubleRoom() {
-        super("Double Room", 2, 3500);
-    }
-}
+// Booking Queue (FIFO)
+class BookingQueue {
+    private Queue<Reservation> queue;
 
-class SuiteRoom extends Room {
-    public SuiteRoom() {
-        super("Suite Room", 3, 6000);
-    }
-}
-
-// Inventory (read-only usage here)
-class RoomInventory {
-    private HashMap<String, Integer> inventory;
-
-    public RoomInventory() {
-        inventory = new HashMap<>();
-        inventory.put("Single Room", 5);
-        inventory.put("Double Room", 0); // unavailable
-        inventory.put("Suite Room", 2);
+    public BookingQueue() {
+        queue = new LinkedList<>();
     }
 
-    public int getAvailability(String roomType) {
-        return inventory.getOrDefault(roomType, 0);
+    // Add request
+    public void addRequest(Reservation reservation) {
+        queue.add(reservation);
+        System.out.println("Request Added:");
+        reservation.display();
     }
 
-    public Map<String, Integer> getAllRooms() {
-        return inventory;
-    }
-}
-
-// Search Service (READ-ONLY)
-class RoomSearchService {
-
-    public void searchAvailableRooms(RoomInventory inventory, Room[] rooms) {
-
-        System.out.println("Available Rooms:\n");
-
-        for (Room room : rooms) {
-            int available = inventory.getAvailability(room.getType());
-
-            // Show only available rooms
-            if (available > 0) {
-                room.displayDetails();
-                System.out.println("Available: " + available + "\n");
-            }
+    // View all requests (without removing)
+    public void displayQueue() {
+        System.out.println("\nCurrent Booking Queue:");
+        for (Reservation r : queue) {
+            r.display();
         }
     }
 }
@@ -94,22 +62,17 @@ public class BookMyStay {
     public static void main(String[] args) {
 
         System.out.println("Welcome to Book My Stay App");
-        System.out.println("Hotel Booking System v4.1\n");
+        System.out.println("Hotel Booking System v5.1\n");
 
-        // Initialize inventory
-        RoomInventory inventory = new RoomInventory();
+        // Initialize booking queue
+        BookingQueue bookingQueue = new BookingQueue();
 
-        // Create room objects
-        Room[] rooms = {
-                new SingleRoom(),
-                new DoubleRoom(),
-                new SuiteRoom()
-        };
+        // Simulate incoming booking requests
+        bookingQueue.addRequest(new Reservation("Alice", "Single Room"));
+        bookingQueue.addRequest(new Reservation("Bob", "Double Room"));
+        bookingQueue.addRequest(new Reservation("Charlie", "Suite Room"));
 
-        // Search service (read-only)
-        RoomSearchService searchService = new RoomSearchService();
-
-        // Perform search
-        searchService.searchAvailableRooms(inventory, rooms);
+        // Display queue (FIFO order preserved)
+        bookingQueue.displayQueue();
     }
 }
