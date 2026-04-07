@@ -32,7 +32,6 @@ class Reservation {
     public String getRoomType() {
         return roomType;
     }
-}
 
 // Inventory class
 class RoomInventory {
