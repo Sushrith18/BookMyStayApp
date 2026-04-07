@@ -1,22 +1,20 @@
 import java.util.*;
 
 /**
- * Book My Stay App - Use Case 8
- * Demonstrates booking history storage and reporting
+ * Book My Stay App - Use Case 10
+ * Demonstrates booking cancellation with rollback using Stack (LIFO)
  *
  * @author Sushrith
- * @version 8.1
+ * @version 10.1
  */
 
-// Reservation (Confirmed Booking)
+// Reservation class
 class Reservation {
     private String reservationId;
-    private String guestName;
     private String roomType;
 
-    public Reservation(String reservationId, String guestName, String roomType) {
+    public Reservation(String reservationId, String roomType) {
         this.reservationId = reservationId;
-        this.guestName = guestName;
         this.roomType = roomType;
     }
 
@@ -24,63 +22,86 @@ class Reservation {
         return reservationId;
     }
 
-    public String getGuestName() {
-        return guestName;
-    }
-
     public String getRoomType() {
         return roomType;
     }
+}
 
-    public void display() {
-        System.out.println("ID: " + reservationId +
-                " | Guest: " + guestName +
-                " | Room: " + roomType);
+// Inventory Service
+class RoomInventory {
+    private Map<String, Integer> inventory = new HashMap<>();
+
+    public RoomInventory() {
+        inventory.put("Single Room", 1);
+        inventory.put("Double Room", 1);
+        inventory.put("Suite Room", 0);
+    }
+
+    public void increaseAvailability(String roomType) {
+        inventory.put(roomType, inventory.get(roomType) + 1);
+    }
+
+    public void displayInventory() {
+        System.out.println("\nCurrent Inventory:");
+        for (Map.Entry<String, Integer> entry : inventory.entrySet()) {
+            System.out.println(entry.getKey() + " : " + entry.getValue());
+        }
     }
 }
 
-// Booking History (stores confirmed bookings)
+// Booking History (tracks confirmed bookings)
 class BookingHistory {
+    private Map<String, Reservation> bookings = new HashMap<>();
 
-    private List<Reservation> history = new ArrayList<>();
-
-    // Add confirmed booking
-    public void addReservation(Reservation r) {
-        history.add(r);
+    public void addBooking(Reservation r) {
+        bookings.put(r.getReservationId(), r);
     }
 
-    // Retrieve all bookings
-    public List<Reservation> getAllReservations() {
-        return history;
+    public Reservation getBooking(String reservationId) {
+        return bookings.get(reservationId);
     }
 
-    // Display history
-    public void displayHistory() {
-        System.out.println("\nBooking History:");
-        for (Reservation r : history) {
-            r.display();
-        }
+    public void removeBooking(String reservationId) {
+        bookings.remove(reservationId);
     }
 }
 
-// Reporting Service
-class BookingReportService {
+// Cancellation Service
+class CancellationService {
 
-    // Generate simple report
-    public void generateReport(List<Reservation> reservations) {
+    // Stack to track released room IDs (LIFO rollback)
+    private Stack<String> rollbackStack = new Stack<>();
 
-        System.out.println("\nBooking Report Summary:");
+    public void cancelBooking(String reservationId,
+                              BookingHistory history,
+                              RoomInventory inventory) {
 
-        Map<String, Integer> countByRoom = new HashMap<>();
+        System.out.println("\nProcessing cancellation for ID: " + reservationId);
 
-        for (Reservation r : reservations) {
-            countByRoom.put(r.getRoomType(),
-                    countByRoom.getOrDefault(r.getRoomType(), 0) + 1);
+        // Validate existence
+        Reservation reservation = history.getBooking(reservationId);
+
+        if (reservation == null) {
+            System.out.println("Cancellation Failed: Reservation not found");
+            return;
         }
 
-        for (Map.Entry<String, Integer> entry : countByRoom.entrySet()) {
-            System.out.println(entry.getKey() + " bookings: " + entry.getValue());
-        }
+        // Push to rollback stack
+        rollbackStack.push(reservationId);
+
+        // Restore inventory
+        inventory.increaseAvailability(reservation.getRoomType());
+
+        // Remove booking from history
+        history.removeBooking(reservationId);
+
+        // Confirm cancellation
+        System.out.println("Cancellation Successful for ID: " + reservationId);
+    }
+
+    // Display rollback stack
+    public void displayRollbackStack() {
+        System.out.println("\nRollback Stack (LIFO): " + rollbackStack);
     }
 }
 
@@ -90,21 +111,30 @@ public class BookMyStay {
     public static void main(String[] args) {
 
         System.out.println("Welcome to Book My Stay App");
-        System.out.println("Hotel Booking System v8.1\n");
+        System.out.println("Hotel Booking System v10.1\n");
 
-        // Initialize history
+        // Initialize services
+        RoomInventory inventory = new RoomInventory();
         BookingHistory history = new BookingHistory();
+        CancellationService cancellationService = new CancellationService();
 
-        // Simulate confirmed bookings (from UC6)
-        history.addReservation(new Reservation("SI_1234", "Alice", "Single Room"));
-        history.addReservation(new Reservation("SU_5678", "Bob", "Suite Room"));
-        history.addReservation(new Reservation("SI_4321", "Charlie", "Single Room"));
+        // Simulate confirmed bookings
+        history.addBooking(new Reservation("SI_1234", "Single Room"));
+        history.addBooking(new Reservation("SU_5678", "Suite Room"));
 
-        // Display history
-        history.displayHistory();
+        // Display initial inventory
+        inventory.displayInventory();
 
-        // Generate report
-        BookingReportService reportService = new BookingReportService();
-        reportService.generateReport(history.getAllReservations());
+        // Cancel valid booking
+        cancellationService.cancelBooking("SI_1234", history, inventory);
+
+        // Attempt invalid cancellation
+        cancellationService.cancelBooking("XX_0000", history, inventory);
+
+        // Display updated inventory
+        inventory.displayInventory();
+
+        // Show rollback stack
+        cancellationService.displayRollbackStack();
     }
 }
